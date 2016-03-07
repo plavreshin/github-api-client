@@ -81,12 +81,12 @@ object GitHubApiService {
   case class Repository(name: String, contributorsUrl: String)
 
   case class Contributor(
-                          login: String,
-                          fullName: String,
-                          created: Instant,
-                          contributions: Int,
-                          followers: Int,
-                          influence: BigDecimal = 0)
+    login: String,
+    fullName: String,
+    created: Instant,
+    contributions: Int,
+    followers: Int,
+    influence: BigDecimal = 0)
 
 
   def asRepository(values: Seq[JsValue]): Seq[Repository] = {
