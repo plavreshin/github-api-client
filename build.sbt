@@ -15,7 +15,6 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
   "com.typesafe.play" %% "play-json" % "2.4.6",
-  "com.twitter" %% "finagle-http" % "6.33.0",
   "io.spray" %% "spray-can" % sprayVersion,
   "io.spray" %% "spray-http" % sprayVersion,
   "org.scalatest" %% "scalatest" % "2.2.6" % "test",
