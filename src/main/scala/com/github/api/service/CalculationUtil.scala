@@ -6,7 +6,7 @@ import com.github.api.service.GitHubApiService.Contributor
 
 object CalculationUtil {
 
-  def calculateSorted(contributors: Seq[Contributor]): Seq[Contributor] = {
+  def evaluateByInfluence(contributors: Seq[Contributor]): Seq[Contributor] = {
     def findInfluence(commits: Int, followers: Int, accountAge: Int) = {
       (commits * 0.1) + (followers * 0.5) + accountAge
     }

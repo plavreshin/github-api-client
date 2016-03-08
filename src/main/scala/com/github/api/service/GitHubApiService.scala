@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
-import com.github.api.service.GitHubApiService.{Contributor, Repository}
+import com.github.api.service.GitHubApiService.{Contribution, Contributor, Repository}
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.{JsSuccess, JsValue, Json}
 import spray.can.Http
@@ -22,38 +22,56 @@ class GitHubApiService(actorSystem: ActorSystem) extends LazyLogging {
   import actorSystem.dispatcher
 
   implicit val system = actorSystem
-  implicit val timeout: Timeout = Timeout(5.seconds)
+  implicit val timeout: Timeout = Timeout(15.seconds)
 
-  type ReposWithContributors = Seq[(Repository, Seq[Contributor])]
+  type RepositoriesWithContributors = Seq[(Repository, Seq[Contributor])]
 
-  def fetchRepositories(name: String): Future[ReposWithContributors] = {
+  def fetchRepositories(name: String): Future[RepositoriesWithContributors] = {
     val requestForRepositories = GitHubApiService.buildRequestForRepositories(name)
 
     get(requestForRepositories) flatMap { resp =>
-      val json = asJsonSeq(resp.entity.asString)
-      val repositories = GitHubApiService.asRepository(json)
+      resp.status match {
+        case StatusCodes.OK =>
+          val json = asJsonSeq(resp.entity.asString)
+          val repositories = GitHubApiService.asRepository(json)
+          val reposWithContributors = repositories map (x => findContributors(x).map(y => x -> y))
+          Future.sequence(reposWithContributors).map(x => x)
 
-      val reposWithContributors = repositories map (x => findContributors(x).map(y => x -> y))
-
-      Future.sequence(reposWithContributors).map(x => x)
+        case other => sys.error(s"received $other status with response: $resp for request $requestForRepositories ")
+      }
     }
   }
 
   private def findContributors(repository: Repository): Future[Seq[Contributor]] = {
-    get(GitHubApiService.buildRequest(repository.contributorsUrl)).map[Seq[Contributor]] { resp =>
+    val contributions = get(GitHubApiService.buildRequest(repository.contributorsUrl)).map[Seq[Contribution]] { resp =>
       val json = asJsonSeq(resp.entity.asString)
       json flatMap { value =>
         for {
           contributionsAmount <- (value \ "contributions").asOpt[Int]
-          login <- (value \ "login").asOpt[String]
-
-        } yield Contributor(
-          login = login,
-          fullName = "",
-          created = Instant.now(),
-          contributions = contributionsAmount,
-          followers = 0)
+          accountUrl <- (value \ "url").asOpt[String]
+        } yield Contribution(contributionsAmount, accountUrl)
       }
+    }
+
+    val values = contributions.map { x =>
+      val mapped = x.map { contribution =>
+        val accountInfo = findAccountInfo(contribution)
+        accountInfo
+      }
+      Future.sequence(mapped).map(contributors => contributors.flatten)
+    }
+
+    values.flatMap(contributorsFuture => contributorsFuture)
+  }
+
+  private def findAccountInfo(contribution: Contribution): Future[Option[Contributor]] = {
+    get(GitHubApiService.buildRequest(contribution.accountUrl)).map[Option[Contributor]] { resp =>
+      val accountJson = Json.parse(resp.entity.asString)
+      for {
+        name <- (accountJson \ "name").asOpt[String]
+        followers <- (accountJson \ "followers").asOpt[Int]
+        created <- (accountJson \ "created_at").asOpt[Instant]
+      } yield Contributor(fullName = name, created = created, contributions = contribution.contributions, followers = followers)
     }
   }
 
@@ -80,12 +98,14 @@ object GitHubApiService {
 
   case class Repository(name: String, contributorsUrl: String)
 
+
+  case class Contribution(contributions: Int, accountUrl: String)
+
   case class Contributor(
-    login: String,
     fullName: String,
     created: Instant,
-    contributions: Int,
-    followers: Int,
+    contributions: Int = 0,
+    followers: Int = 0,
     influence: BigDecimal = 0)
 
 
