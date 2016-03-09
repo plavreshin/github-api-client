@@ -9,22 +9,20 @@ GitHub Api client
 
 Should be able to connect to gitHubApi and fetch repositories with contributors, evaluate influence based on given formula. 
 
-An example: 
-`c.github.api.actor.GitHubClientActor - Repo name: sbt-republish and it's contributors: [ ]
- c.github.api.actor.GitHubClientActor - Repo name: sbt-multi-jvm and it's contributors: [ {
-   "fullName" : "Jonas Bonér",
-   "created" : "2008-05-18T23:22:48",
-   "contributions" : 1,
-   "followers" : 668,
-   "influence" : 341.1
+An example for 'typesafe' request is : 
+`[{
+ 	"fullName": "Jonas Bonér",
+ 	"created": "2008-05-18T23:22:48",
+ 	"contributions": 1,
+ 	"followers": 668,
+ 	"influence": 341.1
  }, {
-   "fullName" : "Josh Suereth",
-   "created" : "2008-10-15T06:44:44",
-   "contributions" : 1,
-   "followers" : 437,
-   "influence" : 225.6
- }}]
-`
+ 	"fullName": "Josh Suereth",
+ 	"created": "2008-10-15T06:44:44",
+ 	"contributions": 1,
+ 	"followers": 437,
+ 	"influence": 225.6
+ }]`
 
 Has some simple specs for actor behaviour and evaluation util.
 
