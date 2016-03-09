@@ -8,6 +8,7 @@ import org.scalatest.{Matchers, WordSpec}
 class EvaluationUtilSpec extends WordSpec with Matchers {
   "Evaluation Util" should {
     "evaluate seq of contributors and sort them by influence " in {
+      val evaluationUtil = new EvaluationUtil
       val fresh = Contributor(
         fullName = "Hero",
         created = date2Instant(1L),
@@ -22,7 +23,7 @@ class EvaluationUtilSpec extends WordSpec with Matchers {
 
       val contributors = Seq(fresh, old)
 
-      val evaluated = EvaluationUtil.evaluateByInfluence(contributors = contributors)
+      val evaluated = evaluationUtil.evaluateByInfluence(contributors = contributors)
 
       val topOne = evaluated.head
       topOne.fullName shouldBe old.fullName

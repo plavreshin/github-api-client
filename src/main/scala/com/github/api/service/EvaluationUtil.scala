@@ -5,7 +5,7 @@ import java.time.temporal.ChronoUnit
 
 import com.github.api.domain.Contributor
 
-object EvaluationUtil {
+class EvaluationUtil {
 
   def evaluateByInfluence(contributors: Seq[Contributor]): Seq[Contributor] = {
     def findInfluence(commits: Int, followers: Int, accountAge: Int) = {
