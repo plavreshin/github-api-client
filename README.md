@@ -3,14 +3,23 @@ GitHub Api client
 
 # Consists of 
 
-* Akka Actors
-* Spray-can http client
+* Single Akka Actor 
+* GithubApi client that uses Spray-can for requests
+* Play-json for parsing github json responses
 
-Should be able to connect to gitHubApi and fetch repositories with contributors.
+Should be able to connect to gitHubApi and fetch repositories with contributors, evaluate influence based on given formula. 
+Has some simple specs for actor behaviour and evaluation util.
 
+Lacks a test for github communication.
+
+Also due to amount of requests public github api will sometimes return 
+
+    `{
+       "message": "API rate limit exceeded for xyz (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)",
+       "documentation_url": "https://developer.github.com/v3/#rate-limiting"
+     }`
+                                                                                 
 # TODO: 
-* Adjust contributors fetch mechanism to get full info per contributor
-* Evaluate influence of each contributor
-* Unit-test it 
+* Implement some sort of delay's between requests or worker actors, that could handle inner requests
 
 
