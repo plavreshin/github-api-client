@@ -1,10 +1,11 @@
 package com.github.api.service
 
-import java.time.{LocalDate, Period}
+import java.time._
+import java.time.temporal.ChronoUnit
 
-import com.github.api.service.GitHubApiService.Contributor
+import com.github.api.domain.Contributor
 
-object CalculationUtil {
+object EvaluationUtil {
 
   def evaluateByInfluence(contributors: Seq[Contributor]): Seq[Contributor] = {
     def findInfluence(commits: Int, followers: Int, accountAge: Int) = {
@@ -12,7 +13,7 @@ object CalculationUtil {
     }
 
     def years(x: Contributor): Int = {
-      Period.between(LocalDate.from(x.created), LocalDate.now()).getYears
+      ChronoUnit.YEARS.between(LocalDateTime.ofInstant(x.created, ZoneOffset.ofHours(0)), LocalDateTime.now()).toInt
     }
 
     contributors.map { x =>

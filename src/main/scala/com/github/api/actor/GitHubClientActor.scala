@@ -2,15 +2,18 @@ package com.github.api.actor
 
 import akka.actor.{Actor, Props}
 import com.github.api.actor.GitHubClientActor.{Calculate, In, Lookup}
-import com.github.api.service.{CalculationUtil, GitHubApiService}
-import com.github.api.service.GitHubApiService.{Contributor, Repository}
+import com.github.api.domain.{Contributor, Repository}
+import com.github.api.service.{EvaluationUtil, GitHubApiService}
 import com.typesafe.scalalogging.LazyLogging
+import play.api.libs.json.Json
 
 import scala.util.{Failure, Success}
 
 class GitHubClientActor(gitHubApiService: GitHubApiService) extends Actor with LazyLogging {
 
   import context.dispatcher
+
+  import com.github.api.domain.Formats.contributorsFormat
 
   override def receive: Receive = {
     case msg: In => msg match {
@@ -27,10 +30,10 @@ class GitHubClientActor(gitHubApiService: GitHubApiService) extends Actor with L
       case x: Calculate =>
         logger.info(s"Received calculation: $x")
         val evaluated = x.results.map { case (repo, contributors) =>
-          repo -> CalculationUtil.evaluateByInfluence(contributors)
+          repo -> EvaluationUtil.evaluateByInfluence(contributors)
         }
         evaluated.foreach { case (repo, contributors) =>
-          logger.info(s"Repo name: ${repo.name} and it's contributors: $contributors")
+          logger.info(s"Repo name: ${repo.name} and it's contributors: ${Json.prettyPrint(Json.toJson(contributors))}")
         }
     }
   }

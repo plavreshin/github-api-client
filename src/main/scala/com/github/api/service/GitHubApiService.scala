@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
-import com.github.api.service.GitHubApiService.{Contribution, Contributor, Repository}
+import com.github.api.domain._
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.{JsSuccess, JsValue, Json}
 import spray.can.Http
@@ -43,7 +43,7 @@ class GitHubApiService(actorSystem: ActorSystem) extends LazyLogging {
   }
 
   private def findContributors(repository: Repository): Future[Seq[Contributor]] = {
-    val contributions = get(GitHubApiService.buildRequest(repository.contributorsUrl)).map[Seq[Contribution]] { resp =>
+    val contributions = contributionsFor(repository).map[Seq[Contribution]] { resp =>
       val json = asJsonSeq(resp.entity.asString)
       json flatMap { value =>
         for {
@@ -64,8 +64,12 @@ class GitHubApiService(actorSystem: ActorSystem) extends LazyLogging {
     values.flatMap(contributorsFuture => contributorsFuture)
   }
 
+  protected def contributionsFor(repository: Repository): Future[HttpResponse] = {
+    get(GitHubApiService.buildRequest(repository.contributorsUrl))
+  }
+
   private def findAccountInfo(contribution: Contribution): Future[Option[Contributor]] = {
-    get(GitHubApiService.buildRequest(contribution.accountUrl)).map[Option[Contributor]] { resp =>
+    contributorFor(contribution).map[Option[Contributor]] { resp =>
       val accountJson = Json.parse(resp.entity.asString)
       for {
         name <- (accountJson \ "name").asOpt[String]
@@ -73,6 +77,10 @@ class GitHubApiService(actorSystem: ActorSystem) extends LazyLogging {
         created <- (accountJson \ "created_at").asOpt[Instant]
       } yield Contributor(fullName = name, created = created, contributions = contribution.contributions, followers = followers)
     }
+  }
+
+  protected def contributorFor(contribution: Contribution): Future[HttpResponse] = {
+    get(GitHubApiService.buildRequest(contribution.accountUrl))
   }
 
   protected def get(request: HttpRequest): Future[HttpResponse] = {
@@ -95,19 +103,6 @@ object GitHubApiService {
   def buildRequest(uri: String): HttpRequest = {
     HttpRequest(method = GET, uri = Uri(uri))
   }
-
-  case class Repository(name: String, contributorsUrl: String)
-
-
-  case class Contribution(contributions: Int, accountUrl: String)
-
-  case class Contributor(
-    fullName: String,
-    created: Instant,
-    contributions: Int = 0,
-    followers: Int = 0,
-    influence: BigDecimal = 0)
-
 
   def asRepository(values: Seq[JsValue]): Seq[Repository] = {
     val repositories = values map { json =>

@@ -18,5 +18,5 @@ object Main extends App with LazyLogging {
 
   val clientActor = system.actorOf(GitHubClientActor.props(gitHubApiService))
 
-  clientActor ! Lookup("typesafehub")
+  clientActor ! Lookup(lookupValue.getOrElse("typesafehub"))
 }
